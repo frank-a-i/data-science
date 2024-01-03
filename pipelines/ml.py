@@ -47,7 +47,9 @@ def composeClassifiers(categories: list, train_size: float) -> dict:
     estimators = dict()
     
     # make a pipeline per category
+    print("Initiating training. This might take a while.")
     for category in categories:
+        print(f"Training {category}-specific classifier")
         X_train, X_test, y_train, y_test = train_test_split(X, Y[category], train_size=train_size)
 
         pipeline = Pipeline([
