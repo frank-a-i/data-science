@@ -3,7 +3,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, recall_score, accuracy_score, f1_score
 
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
@@ -143,10 +143,11 @@ def testModel(X_test: list, y_test: list, pipeline):
     """
     y_pred = pipeline.predict(X_test)
     confusion_mat = confusion_matrix(y_test, y_pred)
-    accuracy = (y_pred == y_test).mean()
 
     print("Confusion Matrix:\n", confusion_mat)
-    print("Accuracy:", accuracy)
+    print("Accuracy:", accuracy_score(y_test, y_pred))
+    print("Recall:", recall_score(y_test, y_pred))
+    print("F1 score:", f1_score(y_test, y_pred))
 
 
 if __name__ == "__main__":
