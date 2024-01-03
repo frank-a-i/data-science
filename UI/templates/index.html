@@ -1,0 +1,71 @@
+<!doctype html>
+
+<html>
+<head>
+  <title>Index Page</title>
+  <base href="/">
+  <link rel="stylesheet" type="text/css" href="static/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  <script language="JavaScript" src="https://code.jquery.com/jquery-3.7.1.js"></script>
+  <script language="JavaScript" src="{{url_for('static', filename='interactions.js')}}"></script>
+</head>
+
+<body>
+  <!-- Head line -->
+  <p class="vspace"></p>
+  <h1>Disaster Response</h1>
+  <p class="vlittlespace"></p>
+  <p>Pressing "Submit" will run a message evaluation<br>
+  "Demo" will generate an example.<br>
+  "Clear" resets the statistics.</p>
+  <p class="vlittlespace"></p>
+  <!-- User Input -->
+  <div class="container text-center">
+    <div class="row align-items-center">
+      <div class="col">
+        <div class="input-group">
+            <span class="input-group-text">Raise a message</span>
+            <textarea class="form-control" id="queryText" aria-label="With textarea"></textarea>
+        </div>
+      </div>
+      <div class="col">
+        <button type="button" class="btn btn-outline-primary" id="submit">Submit</button>
+      </div>
+      <div class="col">
+        <button type="button" class="btn btn-outline-danger" id="reset">Clear</button>
+      </div>
+      <div class="col"></div> <!-- Make extra room for demo button with this line -->
+      <div class="col">
+        <button type="button" class="btn btn-outline-secondary" id="demo">Demo</button>
+      </div>
+    </div>
+  </div>    
+
+  <div class="estimate-visuals", id="estimate-visuals-block">
+    <!-- Estimates probabilities -->
+    <p class="vlittlespace"></p>
+      <form>
+        <fieldset disabled>
+          <div class="summary-group">
+            <input type="text" id="estimates" class="form-control" placeholder= {{ summaryDescr }}>
+          </div>
+        </fieldset>
+      </form>
+    <p class="vlittlespace"></p>
+
+    <!-- Visual per category -->
+    {%for idcategory in range(0, numCategories // numElementsPerRow )%} 
+    <div class="row align-items-center">
+      {%for idcol in range(0, numElementsPerRow)%}
+      <div class="col">
+        <button type="button" class="btn btn-outline-secondary", id="estimate-{{idcategory*numElementsPerRow + idcol}}">{{categories[idcategory * numElementsPerRow + idcol]}}</button>
+      </div>
+      {%endfor%} 
+      <p class="vlittlespace"></p>
+    </div>
+    {%endfor%} 
+  </div>
+
+</body>
+
+</html>

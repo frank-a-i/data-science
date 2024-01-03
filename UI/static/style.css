@@ -1,0 +1,56 @@
+body {
+  text-align: center;
+  vertical-align: middle;
+  color: dimgray;
+  }
+  
+html {
+  display: table;
+  margin: auto;
+}
+
+h1 {
+  text-align: center;
+}
+
+p {
+  text-align: center;
+  font-size: small;
+  color: dimgray;
+}
+
+.input-group{
+  min-width: 40em;
+  min-height: 10em;
+  text-align: center;
+}
+
+.form-control{
+  text-align: center;
+}
+
+.row{
+  align-content: center;
+  text-align: center;
+}
+
+.vspace{
+  margin-top: 10em;
+  margin-bottom: 10em;
+}
+
+.vlittlespace{
+  margin-top: 2em;
+  margin-bottom: 2em;
+}
+
+.btn
+{
+  min-width: 10em;
+  min-height: 3em;
+}
+
+#submit, #reset, #demo
+{
+  min-height: 0em;
+}
