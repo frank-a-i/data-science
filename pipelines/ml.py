@@ -17,8 +17,8 @@ import argparse
 
 nltk.download(['punkt', 'wordnet'])
 def loadDataset(
-    sqliteFile: str = f'sqlite:///{os.path.join(os.path.dirname(os.path.realpath(__file__)),  "..", "ressources", "disaster_response_data.db")}', 
-    table: str = "Dataset") -> pd.DataFrame:
+    sqliteFile: str, 
+    table: str) -> pd.DataFrame:
     """ Load the prepared dataset
 
     Args:
@@ -149,13 +149,27 @@ def testModel(X_test: list, y_test: list, pipeline):
     print("Recall:", recall_score(y_test, y_pred))
     print("F1 score:", f1_score(y_test, y_pred))
 
+def userHandling() -> argparse.Namespace:
+    """ Let user define the configuration
+
+    Returns:
+        argparse.Namespace: path to database, table name and train size
+    """
+
+    parser = argparse.ArgumentParser(description="Creates the classifier for disaster category estimation")
+    parser.add_argument("-d", "--database", help="SQL-Path to the database", default=f'sqlite:///{os.path.join(os.path.dirname(os.path.realpath(__file__)),  "..", "ressources", "disaster_response_data.db")}')
+    parser.add_argument("-t", "--table", help="Name of the table within the given database (-d) for data extraction", default="Dataset")
+    parser.add_argument("-ts", "--train-size", help="Sample data share for training [0...1]", default=0.99)
+    parser.add_argument("-a", "--run-analysis", help="Eventually run a performance evaluation on the classifier", default=True)
+
+    args = parser.parse_args()
+    return args
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-ts", "--train-size", default=0.99)
-    args = parser.parse_args()
+    args = userHandling()
     
-    df = loadDataset()
+    df = loadDataset(args.database, args.table)
     X = df["message"]
     Y = dict()
 
@@ -168,8 +182,7 @@ if __name__ == "__main__":
 
     exportClassifier(estimators, groundTruth.columns)
     
-    doAnalyis = True
-    if doAnalyis:
+    if args.run_analysis:
         runPerformanceAnalysis(estimators)
 
 

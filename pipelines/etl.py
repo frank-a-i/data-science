@@ -1,11 +1,10 @@
 import os 
+import argparse
 import pandas as pd
 
 from sqlalchemy.engine import create_engine
 
-def getRawData(
-    messagesPath: str = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "ressources", "messages.csv"),
-    categoriesPath: str = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "ressources",  "categories.csv")) -> pd.DataFrame:
+def getRawData(messagesPath: str, categoriesPath: str) -> pd.DataFrame:
     """ Fetch raw data to work on
 
     Args:
@@ -72,8 +71,25 @@ def exportData(
     print(f"Successfully exported database to '{sqlitePath}'")
 
 
+def userHandling() -> argparse.Namespace:
+    """ Let user define the path to the two necessary datasets
+
+    Returns:
+        argparse.Namespace: existing file path to both datasets
+    """
+    parser = argparse.ArgumentParser(description="Composes the data basis for disaster category estimation")
+    parser.add_argument("-m", "--message-dataset", help="Path to 'messages' dataset", default=os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "ressources", "messages.csv"))
+    parser.add_argument("-c", "--categories-dataset", help="Path to 'categories' dataset", default=os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "ressources",  "categories.csv"))
+
+    args = parser.parse_args()
+    assert os.path.isfile(args.message_dataset), f"Could not find file under '{args.message_dataset}'"
+    assert os.path.isfile(args.categories_dataset), f"Could not find file under '{args.categories_dataset}'"
+
+    return args
+
 if __name__ == "__main__":
-    df = getRawData()
+    datasetPaths = userHandling()
+    df = getRawData(datasetPaths.message_dataset, datasetPaths.categories_dataset)
     categories = df.get("categories").str.split(";", expand=True)
     cleaned_categories = makeIndividualColumns(categories)
     dataset = cleanDataFrame(cleaned_categories)
