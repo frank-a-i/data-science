@@ -149,6 +149,7 @@ def testModel(X_test: list, y_test: list, pipeline):
     print("Recall:", recall_score(y_test, y_pred))
     print("F1 score:", f1_score(y_test, y_pred))
 
+
 def userHandling() -> argparse.Namespace:
     """ Let user define the configuration
 
@@ -173,7 +174,7 @@ if __name__ == "__main__":
     X = df["message"]
     Y = dict()
 
-    groundTruth = df.drop(["message", "id", "original", "genre", "related"], axis=1)
+    groundTruth = df.drop(["message", "id", "original", "genre"], axis=1)
     categories = groundTruth.columns
     for category in categories:
         Y.update({category: groundTruth[category]})
@@ -184,5 +185,3 @@ if __name__ == "__main__":
     
     if args.run_analysis:
         runPerformanceAnalysis(estimators)
-
-

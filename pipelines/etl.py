@@ -35,6 +35,7 @@ def makeIndividualColumns(categories):
     categories.columns = category_colnames
     for column in categories:
         categories[column] = [float(col.split("-")[1]) for col in categories[column]]
+        categoires = categories.loc[categories["related"].isin([0,1])]  # allow only valid states (0,1)
 
     return categories
 
@@ -68,7 +69,7 @@ def exportData(
 
     engine = create_engine(sqlitePath)
     df.to_sql(tableName, engine, index=False, if_exists='replace')
-    print(f"Successfully exported database to '{sqlitePath}'")
+    print(f"Successfully exported database to '{sqlitePath}' under '{tableName}'")
 
 
 def userHandling() -> argparse.Namespace:
@@ -86,6 +87,7 @@ def userHandling() -> argparse.Namespace:
     assert os.path.isfile(args.categories_dataset), f"Could not find file under '{args.categories_dataset}'"
 
     return args
+
 
 if __name__ == "__main__":
     datasetPaths = userHandling()
