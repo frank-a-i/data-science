@@ -7,6 +7,7 @@ from sklearn.metrics import confusion_matrix, recall_score, accuracy_score, f1_s
 
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
+import pycld2 as cld2
 import nltk
 import os
 import sys
@@ -14,6 +15,9 @@ import pickle
 import pandas as pd
 import numpy as np
 import argparse
+import plotly
+import plotly.express as px
+
 
 nltk.download(['punkt', 'wordnet'])
 def loadDataset(
@@ -29,9 +33,9 @@ def loadDataset(
         pd.DataFrame: a dataframe converted from the database
     """
     return pd.read_sql_table(table, sqliteFile )
-        
 
-def composeClassifiers(categories: list, train_size: float) -> dict:
+
+def composeClassifiers(categories: list, train_size: float, X: list, Y: list) -> dict:
     """ Generate classifier package
 
     For each category an individual classifier will be provided. This function covers pipeline generation, optimization, training, and zipping.
@@ -39,6 +43,8 @@ def composeClassifiers(categories: list, train_size: float) -> dict:
     Args:
         categories (list): the learning items, per element a separate classifier will be trained
         train_size (float): tuning parameter: train_size of sklearn's `train_test_split`
+        X (list): sample set
+        Y (list): label set
 
     Returns:
         dict: the prepared classifiers
@@ -49,7 +55,6 @@ def composeClassifiers(categories: list, train_size: float) -> dict:
     # make a pipeline per category
     print("Initiating training. This might take a while.")
     for category in categories:
-        print(f"Training {category}-specific classifier")
         X_train, X_test, y_train, y_test = train_test_split(X, Y[category], train_size=train_size)
 
         pipeline = Pipeline([
@@ -69,31 +74,51 @@ def composeClassifiers(categories: list, train_size: float) -> dict:
         pipeline.fit(X_train, y_train)
         # push back
         estimators.update({category: {"clf": pipeline, "test_data": {"X": X_test, "y": y_test}, "train_data": X_train}})
-
     return estimators
 
 
 def exportClassifier(
     estimators: dict, 
-    learnedCategories: list,
+    groundtruth: pd.DataFrame,
+    languages: list,
     outputPath: str = os.path.join(os.path.dirname(os.path.realpath(__file__)),  "..", "ressources", "classifier.pkl")):
     """ Store the classifiers persistently
 
     Args:
         estimators (dict): the struct to be stored
-        learnedCategories (list): the list of categories the estimators work on
+        groundTruth (pd.DataFrame): the list of categories the estimators work on
+        languages (list): list of hint from which language a ground truth message originated
         outputPath (str, optional): Where the file should be written to.
     """
+    
+    # compose ...
+    exportPackage = dict()  # focus on the classifiers alone
+    for key in estimators.keys():
+        exportPackage.update({key: estimators[key]["clf"]})
+        exportPackage.update({"messages": estimators[key]["train_data"]})
+    exportPackage.update({"learned_categories": groundtruth.columns})
+    
+    # ... and store
     with open(outputPath, "wb") as clfFile:
-        # compose ...
-        exportPackage = dict()  # focus on the classifiers alone
-        for key in estimators.keys():
-            exportPackage.update({key: estimators[key]["clf"]})
-            exportPackage.update({"messages": estimators[key]["train_data"]})
-        exportPackage.update({"learned_categories": learnedCategories})
-
-        # ... and store
         pickle.dump(exportPackage, clfFile)
+
+    # generate visuals ..
+    # ... show sample distribution
+    plotdata = pd.DataFrame(dict(
+        categories = groundtruth.columns,
+        amount = [len(groundtruth.loc[groundtruth[category] == 1].values.tolist()) for category in groundtruth.columns]
+    ))
+    fig = px.bar(plotdata, x = "categories", y = "amount")
+    plotly.offline.plot(fig, filename=os.path.join(os.path.dirname(os.path.realpath(__file__)),  "..", "UI", "static", "category_distribution.html"), auto_open=False)
+    
+    # ... show language sources
+    plotdata = pd.DataFrame(dict(
+        languages = list(set(languages)),
+        amount = [languages.count(language) for language in list(set(languages))]
+    ))
+    fig = px.pie(plotdata, values="amount", names="languages")
+    plotly.offline.plot(fig, filename=os.path.join(os.path.dirname(os.path.realpath(__file__)),  "..", "UI", "static", "language_sources.html"), auto_open=False)
+    
     print(f"Successfully exported package to '{outputPath}'")
 
 
@@ -175,13 +200,14 @@ if __name__ == "__main__":
     Y = dict()
 
     groundTruth = df.drop(["message", "id", "original", "genre"], axis=1)
+    languages = [cld2.detect(message)[2][0][0] for message in df["original"] if isinstance(message, str)]
     categories = groundTruth.columns
     for category in categories:
         Y.update({category: groundTruth[category]})
 
-    estimators = composeClassifiers(categories, float(args.train_size))
+    estimators = composeClassifiers(categories, float(args.train_size), X, Y)
 
-    exportClassifier(estimators, groundTruth.columns)
+    exportClassifier(estimators, groundTruth, languages)
     
     if args.run_analysis:
         runPerformanceAnalysis(estimators)

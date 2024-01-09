@@ -34,6 +34,10 @@ $(document).ready(function(){
     });
     $("#estimate-visuals-block").hide();
 
+
+    $("#insights").click(function (event) {
+    location.replace("/insights");
+    })
   });
 
 // updates the user input mask with a demo message

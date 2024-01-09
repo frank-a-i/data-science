@@ -41,6 +41,10 @@ def run_app(summaryDescr="Inspection"):
     numElementsPerRow, categories = getAppConfig()
     return render_template('index.html', summaryDescr=summaryDescr, numElementsPerRow=numElementsPerRow, numCategories=len(categories), categories=categories)
 
+@app.route('/insights')
+def graphPage():
+    return render_template('insights.html')
+
 # callbacks
 @app.route('/loading', methods=["POST"])
 def load_application():

@@ -35,7 +35,6 @@ def makeIndividualColumns(categories):
     categories.columns = category_colnames
     for column in categories:
         categories[column] = [float(col.split("-")[1]) for col in categories[column]]
-        categoires = categories.loc[categories["related"].isin([0,1])]  # allow only valid states (0,1)
 
     return categories
 
@@ -51,6 +50,9 @@ def cleanDataFrame(cleaned_categories: pd.DataFrame) -> pd.DataFrame:
     """
     df_wo_flaky_categories = df.drop("categories", axis=1)
     df_w_good_categories = df_wo_flaky_categories.join(cleaned_categories)
+    for category in cleaned_categories.columns:
+        df_w_good_categories.drop(df_w_good_categories[df_w_good_categories[category] > 1].index, inplace=True)
+
     df_nodup = df_w_good_categories.drop_duplicates()
     return df_nodup
 
