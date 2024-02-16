@@ -2,9 +2,7 @@ import os
 import pickle
 import pandas as pd
 import matplotlib.pyplot as plt
-from WeatherRequests import WeatherFeatures
 from common import Config
-import multiprocessing
 
 #from sklearn.svm import SVR as Regressor
 from sklearn.tree import plot_tree
@@ -48,10 +46,8 @@ def trainRegressor(df, clfs, clfCase):
             "criterion": ["squared_error", "friedman_mse", "absolute_error", "poisson"],
             "splitter": ["best", "random"],
             "max_depth": range(1, 20),
-            "min_samples_split": range(1, 20),
-            "min_samples_leaf": range(1, 20),
-            "max_features": range(1, len(X_train.columns)),
-            "monotonic_cst": [-1, 0, 1]
+            "min_samples_split": range(2, 10),
+            "max_features": range(1, len(X_train.columns))
         }
 
     # optimize
@@ -64,8 +60,9 @@ def trainRegressor(df, clfs, clfCase):
     #clf.fit(X_train, y_train)
     clf = cv
     y_pred = clf.predict(X_test)
-    clfs.update({clfCase: clf})
-    print(clfCase, rmse(y_test, y_pred))
+    error = rmse(y_test, y_pred)
+    print(clfCase, rmse)
+    clfs.update({clfCase: {"clf": clf, "error": error}})
 
 def runAnalytics(df: pd.DataFrame):
     
@@ -94,14 +91,8 @@ def runAnalytics(df: pd.DataFrame):
     
     trainings = []
     for clfCase in classifierCases:
-        p = multiprocessing.Process(target=trainRegressor, args=(df, clfs, clfCase))
-        trainings.append(p)
-        print(f"Training {clfCase} regressor")
-        p.start()
-    
-    for proc in trainings:
-        proc.join()
-        print(f"One Regressor training complete")
+        print(f"Training {clfCase} regressor now")
+        trainRegressor(df, clfs, clfCase)
     print("Finished training")
     
     storeClassifier(clfs)
