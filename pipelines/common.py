@@ -1,5 +1,7 @@
 import os
 import pickle
+import pandas as pd
+from typing import Union
 from dataclasses import dataclass
 
 @dataclass
@@ -42,6 +44,7 @@ def storeContent(data: Union[dict, pd.DataFrame], path: str, userMsg : str =""):
     if (len(userMsg) > 0):
         print(userMsg)
 
-    with open(Config.classifierFilepath, 'wb') as pickleFile:
-        pickle.dump(clfs, pickleFile, protocol=pickle.HIGHEST_PROTOCOL)
+    # create if it does not exist else overwrite
+    with open(path, "xb" if not os.path.isfile(path) else "wb") as pickleFile:         
+        pickle.dump(data, pickleFile, protocol=pickle.HIGHEST_PROTOCOL)
     print(f"Stored content to {path}")

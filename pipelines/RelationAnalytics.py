@@ -1,11 +1,11 @@
+import sys
 import os
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
 import pickle
 import pandas as pd
-import matplotlib.pyplot as plt
-from common import Config, storeContent
-from typing import Union
+from pipelines.common import Config, storeContent
 
-from sklearn.tree import plot_tree
 from sklearn.tree import DecisionTreeRegressor as Regressor
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import root_mean_squared_error as rmse
@@ -63,9 +63,9 @@ def trainRegressor(df: pd.DataFrame, clfs: dict, clfCase: str):
     # train
     cv.fit(X_train, y_train)
     
-    y_pred = clf.predict(X_test)
+    y_pred = cv.predict(X_test)
     error = rmse(y_test, y_pred)
-    print(clfCase, rmse)
+    print(clfCase, error)
     clfs.update({clfCase: {"clf": cv, "error": error}})
 
 def runAnalytics(df: pd.DataFrame):
@@ -79,8 +79,7 @@ def runAnalytics(df: pd.DataFrame):
     for clfCase in Config.songDescriptors:
         clfs.update({clfCase: None})
     
-    trainings = []
-    for clfCase in classifierCases:
+    for clfCase in Config.songDescriptors:
         print(f"Training {clfCase} regressor now")
         trainRegressor(df, clfs, clfCase)
     print("Finished training")
@@ -88,6 +87,7 @@ def runAnalytics(df: pd.DataFrame):
     storeContent(clfs, Config.classifierFilepath)
         
 if __name__ == "__main__":
+    print("[main] Drawing conclusions, training regressors \n")
     df = getData()
     storeContent(df, Config.fullDataframeFilepath)
     runAnalytics(df)

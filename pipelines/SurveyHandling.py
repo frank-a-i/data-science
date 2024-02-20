@@ -1,13 +1,15 @@
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
 import zipfile
 import glob
 import wget
 import os
 import numpy as np
 import pandas as pd
-import pickle
 from datetime import datetime
-from common import Config, storeContent
-
+from pipelines.common import Config, storeContent
 
 class SurveyHandling:
     def __init__(self):
@@ -47,45 +49,6 @@ class SurveyHandling:
                 compressedFile.extractall(Config.rawDataPath)
                 
         print(f"Extracted {len(glob.glob(searchAnyContentCmd)) - 1} files to {Config.rawDataPath}")
-        
-        
-    def _readCsv(self, pathToFile: str, placeboValue=np.nan) -> dict:
-        """ Loads the raw dataset file and turns it into a better processible format
-
-        Args:
-            pathToFile (str): where the raw data is located
-            placeboValue (np.nan, optional): value that should be put if data is missing. Defaults to np.nan.
-
-        Returns:
-            dict: the processible dictionary
-        """
-
-        assert os.path.isfile(pathToFile), f"Cannot read file '{pathToFile}'"
-
-        csvContent = dict()
-        with open(pathToFile, 'r') as csvFile:
-            lines = csvFile.readlines()
-            nRows = len(lines)
-            nHeaderLines = 1
-            columns = lines[0].split("\t")
-            columns[-1] = columns[-1].split("\n")[0] # remove trailing \n
-            
-            for column in columns:
-                csvContent.update({column: [placeboValue] * (nRows-nHeaderLines)})
-
-            for idr, line in enumerate(lines):
-                if idr == 0:
-                    continue
-                
-                for idc, col in enumerate(line.split("\t")):
-                    if idc >= len(columns):
-                        break
-                        
-                    csvContent[columns[idc]][idr - 1] = col.split("\n")[0] # remove trailing \n
-
-        
-        return csvContent
-
 
     def composeDataframe(self, dropIdentifier=True) -> pd.DataFrame:
         """ Turns the individual raw datasets into a combined dataframe
@@ -105,22 +68,24 @@ class SurveyHandling:
             if dsetFile not in foundFiles:
                 raise IOError(f"Missing essential data source '{dsetFile}', cannot proceed.")
 
-        df_tweet = pd.DataFrame(self._readCsv(os.path.join(Config.rawDataPath, "tweet.txt")))
-        df_track = pd.DataFrame(self._readCsv(os.path.join(Config.rawDataPath, "track.txt")))
+        df_tweet = pd.read_csv(os.path.join(Config.rawDataPath, "tweet.txt"), delimiter="\t", on_bad_lines="warn")
+        
+        df_track = pd.read_csv(os.path.join(Config.rawDataPath, "track.txt"), delimiter="\t", on_bad_lines="warn")
         df_track.columns = ["tweet_trackId", "track_title", "tweet_artistId"]
-        df_artist = pd.DataFrame(self._readCsv(os.path.join(Config.rawDataPath, "artists.txt")))
+        
+        df_artist = pd.read_csv(os.path.join(Config.rawDataPath, "artists.txt"), delimiter="\t", on_bad_lines="warn")
         df_artist.columns = ["tweet_artistId", "artist_mbid", "artist_name"]
         
         df = df_tweet
+        
         for subframe in [df_track, df_artist]:
             df = pd.merge(df, subframe)
         
-
-        df_dt_cleared = self._convertToAppropriateDatetype(df)
-        df_europe = df_dt_cleared.loc[(df_dt_cleared["tweet_longitude"] > Config.testArea.topLeft.longitude) & 
-                                      (df_dt_cleared["tweet_longitude"] < Config.testArea.bottomRight.longitude) &
-                                      (df_dt_cleared["tweet_latitude"] > Config.testArea.bottomRight.latitude) & 
-                                      (df_dt_cleared["tweet_latitude"] < Config.testArea.topLeft.latitude)]
+        df = self._convertToAppropriateDatetype(df)
+        df_europe = df.loc[(df["tweet_longitude"] > Config.testArea.topLeft.longitude) & 
+                                      (df["tweet_longitude"] < Config.testArea.bottomRight.longitude) &
+                                      (df["tweet_latitude"] > Config.testArea.bottomRight.latitude) & 
+                                      (df["tweet_latitude"] < Config.testArea.topLeft.latitude)]
         
         df_reduced = df_europe.drop(np.random.choice(df_europe.index, df_europe.shape[0] - Config.apiRequestLimit, replace=False)).reset_index()
 
@@ -140,6 +105,7 @@ class SurveyHandling:
         Returns:
             pd.DataFrame: the DataFrame with the right dtypes
         """
+        
         df["tweet_datetime"] = df["tweet_datetime"].apply(lambda curDate: datetime.strptime(curDate, "%Y-%m-%d %H:%M:%S"))
         strToNumFields = ["tweet_longitude", "tweet_latitude", "tweet_trackId", "tweet_artistId",  "tweet_tweetId", "tweet_id", "tweet_weekday"]
         for field in strToNumFields:
@@ -147,7 +113,7 @@ class SurveyHandling:
             
         return df
 
-    def generateInsights(self):
+    def generateInsights(self, df):
         """ Create statistics """
 
         print("Composing data, this might take some minutes")
@@ -178,12 +144,12 @@ class SurveyHandling:
         ax.set_title("Sample extraction location")
         countryfig.savefig(os.path.join(analyticsPath, "country_distribution.png"), bbox_inches='tight', dpi=200)
 
-        print("Completed, see results under f'{analyticsPath}'")   
+        print(f"Completed, see results under '{analyticsPath}'")   
     
 
 if __name__=="__main__":
-    print("[main] This demonstrates the composition of the survey database \n")
+    print("[main] Reading survey data \n")
     surveyHandling = SurveyHandling()
-    df = surveyHandling.composeDataframe(True)
-    surveyHandling.generateInsights()
+    df = surveyHandling.composeDataframe(dropIdentifier=True)
+    surveyHandling.generateInsights(df)
     storeContent(df, Config.surveyDataframeFilepath, f"Saving latest state of dataset\n{df.head()}")

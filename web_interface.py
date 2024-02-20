@@ -1,3 +1,4 @@
 from UI import app
 
-app.run(host="0.0.0.0", debug=True)
+if __name__ == __name__:
+    app.run(host="0.0.0.0", debug=True)

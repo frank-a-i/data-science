@@ -1,14 +1,14 @@
-import requests
+import sys
 import os
-import json
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
+import requests
 import pickle
 import numpy as np
 import pandas as pd
 from typing import Union, Tuple
 from time import sleep
-from common import Config, storeContent
-from dataclasses import dataclass
-
+from pipelines.common import Config, storeContent
 
 class SongAttributes:
 
@@ -91,7 +91,7 @@ class SongAttributes:
         
         return response
 
-    def _fetchSongId(self, requestedTitle: str, expectedArtist: str) -> Union[None, Tuple[contentId, popularity]]:
+    def _fetchSongId(self, requestedTitle: str, expectedArtist: str) -> Union[None, Tuple[int, int]]:
         """ Iterate through dataset and compose a dataset of song features and identification
 
         Args:
@@ -107,7 +107,7 @@ class SongAttributes:
             if gotMatch:
                 break
             for _ in range(10, 0, -1): # straight retry
-                searchResult = self._searchSong(requestedTitle, expectedArtist, market)
+                searchResult = self._searchSong(requestedTitle, market)
                 if searchResult is None:
                     raise RuntimeError
                 if "tracks" in searchResult.keys():
@@ -144,6 +144,17 @@ class SongAttributes:
         Returns:
             pd.DataFrame: the attached song features
         """
+        
+        def queryAttributes(musicFeatures: dict, batchProcessingIds: list):
+            for songAttributes in self._retrieveSongAttributes(batchProcessingIds):
+                if songAttributes is None:
+                    continue
+                
+                for attribute in Config.songDescriptors:
+                    musicFeatures[attribute].append(songAttributes[attribute] if attribute in songAttributes.keys() else 0)
+                
+                musicFeatures["id"].append(songAttributes["id"])
+        
         musicFeatures = {"id": []}
         for feature in Config.songDescriptors:
             musicFeatures.update({feature: []})
@@ -153,17 +164,12 @@ class SongAttributes:
             if len(batchProcessingIds) < self._batchSize:
                 batchProcessingIds.append(curContent[1]["id"])
                 continue
-            relatedAttributes = self._retrieveSongAttributes(batchProcessingIds)
             batchProcessingIds = []
+            queryAttributes(musicFeatures, batchProcessingIds)
+        
+        if len(batchProcessingIds) > 0:
+            queryAttributes(musicFeatures, batchProcessingIds)
             
-            for songAttributes in relatedAttributes:
-                if songAttributes is None:
-                    continue
-                trackFeatures = dict()
-                for attribute in Config.songDescriptors:
-                    musicFeatures[attribute].append(songAttributes[attribute] if attribute in songAttributes.keys() else 0)
-                
-                musicFeatures["id"].append(songAttributes["id"])
 
         return pd.DataFrame(musicFeatures)
    
@@ -183,17 +189,15 @@ class SongAttributes:
         df_music = df.get(["track_title", "artist_name"])
         
         headline="artist_name;track_title;id;popularity"
-        df_storedIds = None
         if os.path.isfile(Config.songSearchResultsFilepath):
             try:
-                df_storedIds = pd.read_csv(Config.songSearchResultsFilepath, delimiter=";")
-            except pd.errors.EmptyDataError:
-                df_storedIds = pd.DataFrame({"artist_name":[], "track_title":[], "title":[], "id":[], "popularity":[]})
+                df_storedIds = pd.read_csv(Config.songSearchResultsFilepath, delimiter=";", on_bad_lines="warn", encoding = "latin")
             except Exception as e:
-                print(e)
+                raise RuntimeError(e)
         else:
-            with open(Config.songSearchResultsFilepath, 'w') as newSongIdFile:
-                newSongIdFile.write(headline)
+            with open(Config.songSearchResultsFilepath, 'x') as newSongIdFile:
+                newSongIdFile.write(f"{headline}\n")
+            df_storedIds = pd.DataFrame({"artist_name": [], "track_title": [], "id": [], "popularity":[]})
                 
         with open(Config.songSearchResultsFilepath, 'a') as songIdFile:
             for idt, track in enumerate(df_music.iterrows()):
@@ -235,11 +239,10 @@ class SongAttributes:
         df_orderedUniqueIds.to_csv(Config.cleanSongSearchResultsFilepath)
         df_musicFeatures = self._fetchAttributes(df_orderedUniqueIds.get(["id", "popularity"]))
         df_allSongInfo = pd.merge(df_orderedUniqueIds, df_musicFeatures).drop(["popularity"], axis=1)  # covered in df_musicFeatures
-
-        storeContent(df_allSongInfo, Config.songAttributesDataframeFilepath, df_allSongInfo.head())
+        storeContent(df_allSongInfo, Config.songAttributesDataframeFilepath, userMsg=df_allSongInfo.head())
         
 
 if __name__== "__main__":
-    
+    print("[main] Fetching song features \n")
     songAttributes = SongAttributes()
     songAttributes.getSongAttributesForSurvey()

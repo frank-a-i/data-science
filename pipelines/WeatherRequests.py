@@ -1,12 +1,13 @@
+import sys
 import os
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
 import pickle
 import requests
 import datetime
 import pandas as pd
-from numpy import mean
 from pipelines.common import Config, storeContent
 from datetime import datetime
-from dataclasses import dataclass
 
 class WeatherRequests:
     def __init__(self):
@@ -100,7 +101,7 @@ class WeatherRequests:
         stats = self.getStatisticsFor(longitude, latitude, datetime.now())
         return stats
     
-    def getWeatherForSurvey(sel) -> pd.DataFrame:
+    def getWeatherForSurvey(self) -> pd.DataFrame:
         """ Takes the survey location information and retrieves meterological data for the individual cases
 
         Raises:
@@ -161,8 +162,7 @@ class WeatherRequests:
         return pd.DataFrame(weatherData)
 
 if __name__ == "__main__":
-    print(f"This checks retrieving Weather Data on {testlongitude}:{testlattitude} on day {testday} month {testmonth}")
-
+    print("[main] Fetching meterological features\n")
     weatherRequests = WeatherRequests()
     df_weather = weatherRequests.getWeatherForSurvey()
-    weatherRequests.storeContent(df_weather, Config.weatherDataframeFilepath, f"Saving latest state of dataset\n{df_weather.head()}")
+    storeContent(df_weather, Config.weatherDataframeFilepath, f"Saving latest state of dataset\n{df_weather.head()}")

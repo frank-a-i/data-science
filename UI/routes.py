@@ -1,6 +1,5 @@
 from UI import app
 import pickle
-import numpy as np
 import pandas as pd
 from pipelines.common import Config
 from pipelines.WeatherRequests import WeatherRequests
