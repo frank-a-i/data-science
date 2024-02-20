@@ -4,8 +4,9 @@ import json
 import pickle
 import numpy as np
 import pandas as pd
+from typing import Union, Tuple
 from time import sleep
-from common import Config
+from common import Config, storeContent
 from dataclasses import dataclass
 
 
@@ -14,24 +15,19 @@ class SongAttributes:
     def __init__(self,  client_id="78388a06f8b342aca5c74bbc8bbad303",
                         client_pw="6addc5ea36654ef0ba38a29468d1e0d7"):
 
-        self._client_id = client_id
-        self._client_pw = client_pw
-        self._token = None 
-        self._batchSize = 99  # limit set by API
-        self._sleepBeforeNextAPIRequest = 1
-        self._retrieveAccessToken()
-        self._extractFeatures = ['danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo']
-        self._countryCodes = ["US", "DE", "FR", "ES", "IT", "GB"] 
-        """BE", "BG", "DK", "EE",
-                              "IE", "IT", "HR", "LV", "LT", "LU", "MT", "NL",
-                              "AT", "PL", "PT", "RO", "SE", "SK", "SI", "FI",
-                              "CZ", "HU", "CY", "IS", "LI", "NO", "CH", "GB",
-                              "AL", "ME", "BA", "MD", "MK", "RS", "TR", "UA",
-                              "AD", "BY", "MC", "SM", "GR"
-                              ]
-        """
+        self._client_id = client_id         # Spotify-API-ID
+        self._client_pw = client_pw         # Spotify-API-PW
+        self._token = None                  # Spotify-API-Token
+        self._batchSize = 99                # limit set by API
+        self._sleepBeforeNextAPIRequest = 1 # number of seconds to wait to relieve API
+        self._countryCodes = ["US", "DE", "FR", "ES", "IT", "GB"] # list of country markets to search in for songs 
+
+        self._retrieveAccessToken()         
         
     def _retrieveAccessToken(self):
+        """ Generate new Spotify API access token
+        Spotify requires frequently a newly generated token in order to interact with the API
+        """
         r = requests.post(
             url='https://accounts.spotify.com/api/token', 
             headers={"Content-Type": "application/x-www-form-urlencoded"}, 
@@ -43,7 +39,16 @@ class SongAttributes:
         except Exception as e:
             print(f"Could not get API token:\n{e}")
 
-    def _searchSong(self, title: str, artist: str, market: str):
+    def _searchSong(self, title: str, market: str) -> Union[dict, None]:
+        """ Query Spotify to get artist and spotify ID 
+
+        Args:
+            title (str): the song title to look for
+            market (str): the country market where spotify should look
+
+        Returns:
+            Union[dict, None]: response of Spotify API
+        """
         apiReadableTitle = title.replace(" ", "+").lower()
         sleep(self._sleepBeforeNextAPIRequest)  # destress API
         r = requests.get(
@@ -60,6 +65,14 @@ class SongAttributes:
         return response
 
     def _retrieveSongAttributes(self, contentIds: list[str]) -> list[dict]:
+        """ Get music descriptors for song
+
+        Args:
+            contentIds (list[str]): list of songs that should be evaluated
+
+        Returns:
+            list[dict]: spotify response
+        """
         sleep(self._sleepBeforeNextAPIRequest)
         
         contentIdsStr = ""
@@ -78,7 +91,16 @@ class SongAttributes:
         
         return response
 
-    def _fetchSongId(self, requestedTitle: str, expectedArtist: str):
+    def _fetchSongId(self, requestedTitle: str, expectedArtist: str) -> Union[None, Tuple[contentId, popularity]]:
+        """ Iterate through dataset and compose a dataset of song features and identification
+
+        Args:
+            requestedTitle (str): the title that should be looked for in Spotify
+            expectedArtist (str): the artist that is used to identify the right track
+
+        Returns:
+            Union[None, Tuple[contentId, popularity]]: the identification and popularity feature
+        """
         
         gotMatch = False
         for market in self._countryCodes:
@@ -94,6 +116,7 @@ class SongAttributes:
                     self._retrieveAccessToken()
             if "tracks" not in searchResult.keys(): # finaly give up
                 print(f"Unexpected API response for {requestedTitle}  - {expectedArtist}\n{searchResult}")
+
             for item in searchResult["tracks"]["items"]:
                 try:
                     for artist in item["artists"]: 
@@ -112,9 +135,17 @@ class SongAttributes:
         else:
             return (contentId, popularity)
         
-    def _fetchAttributes(self, df_content: pd.DataFrame):
+    def _fetchAttributes(self, df_content: pd.DataFrame) -> pd.DataFrame:
+        """ Retrieve song features for each song
+
+        Args:
+            df_content (pd.DataFrame): the collection of songs
+
+        Returns:
+            pd.DataFrame: the attached song features
+        """
         musicFeatures = {"id": []}
-        for feature in self._extractFeatures:
+        for feature in Config.songDescriptors:
             musicFeatures.update({feature: []})
         
         batchProcessingIds = []
@@ -129,7 +160,7 @@ class SongAttributes:
                 if songAttributes is None:
                     continue
                 trackFeatures = dict()
-                for attribute in self._extractFeatures:
+                for attribute in Config.songDescriptors:
                     musicFeatures[attribute].append(songAttributes[attribute] if attribute in songAttributes.keys() else 0)
                 
                 musicFeatures["id"].append(songAttributes["id"])
@@ -137,6 +168,14 @@ class SongAttributes:
         return pd.DataFrame(musicFeatures)
    
     def getSongAttributesForSurvey(self):
+        """ Iterate through dataset, figure out the contentId and related song descriptors
+
+        This function takes a while, therefore and because Spotify API does not always work stable 
+        an intermediate state is stored in Config.songSearchResultsFilepath to continue until it is finished.
+
+        This function will only query song data that have not been retrieved yet, even after a break. So this 
+        function can be called as many times it is necessary.
+        """
         
         with open(Config.surveyDataframeFilepath, 'rb') as pickleFile:
             df = pickle.load(pickleFile)
@@ -183,7 +222,7 @@ class SongAttributes:
                                   f"{headline.split(';')[2]}": [curId], 
                                   f"{headline.split(';')[3]}": [curPopularity]})])
                 newEntry=f"{artist};{title};{curId};{curPopularity}\n"
-                print(f"ADDING {newEntry}")
+                print(f"Adding {newEntry}")
                 songIdFile.write(newEntry)
                 
         print("Number of total findings: ", df_storedIds.shape[0])
@@ -197,10 +236,7 @@ class SongAttributes:
         df_musicFeatures = self._fetchAttributes(df_orderedUniqueIds.get(["id", "popularity"]))
         df_allSongInfo = pd.merge(df_orderedUniqueIds, df_musicFeatures).drop(["popularity"], axis=1)  # covered in df_musicFeatures
 
-        print("Storing final results to: ", Config.songAttributesDataframeFilepath)
-        print(df_allSongInfo.head())
-        with open(Config.songAttributesDataframeFilepath, 'wb') as pickleFile:
-            pickle.dump(df_allSongInfo, pickleFile, protocol=pickle.HIGHEST_PROTOCOL)
+        storeContent(df_allSongInfo, Config.songAttributesDataframeFilepath, df_allSongInfo.head())
         
 
 if __name__== "__main__":

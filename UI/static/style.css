@@ -1,22 +1,11 @@
-body {
-  text-align: center;
-  vertical-align: middle;
-  color: dimgray;
-  }
-  
-html {
-  display: table;
-  margin: auto;
-}
-
 h1 {
   text-align: center;
 }
 
 @media (min-width: 1200px) {
-    .container{
-        max-width: 970px;
-    }
+  .container {
+    max-width: 970px;
+  }
 }
 
 p {
@@ -25,38 +14,32 @@ p {
   color: dimgray;
 }
 
-.input-group{
-  min-width: 40em;
-  min-height: 10em;
-  text-align: center;
-}
 
-.form-control{
-  text-align: center;
-}
-
-.row{
-  align-content: center;
-  text-align: center;
-}
-
-.vspace{
+.vspace {
   margin-top: 10em;
   margin-bottom: 10em;
 }
 
-.vlittlespace{
+.vlittlespace {
   margin-top: 2em;
   margin-bottom: 2em;
 }
 
-.btn
-{
-  min-width: 10em;
-  min-height: 3em;
+
+#img-scaled {
+  width: 500px;
+  height: auto;
+  /*to preserve the aspect ratio of the image*/
 }
 
-#submit, #reset, #demo
-{
-  min-height: 0em;
+.px-1 {
+  border-color: black;
+  border-style: solid;
+  border-radius: 15px;
+}
+
+.px-4 {
+  background-image: linear-gradient(to bottom, dimgrey, darkblue);
+  color: white;
+  border-radius: 15px;
 }

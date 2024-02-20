@@ -4,35 +4,9 @@ import requests
 import datetime
 import pandas as pd
 from numpy import mean
-from common import Config
+from pipelines.common import Config, storeContent
 from datetime import datetime
 from dataclasses import dataclass
-
-
-class SequenceFeature:
-    def __init__(self, samples):
-        self.min = min(samples)
-        self.max = max(samples)
-        self.mean = mean(samples)
-    def __repr__(self):
-        return f"{self.min} >= {self.mean} >= {self.max}"
-
-@dataclass
-class WeatherFeatures:
-    temp: SequenceFeature
-    relHumidity: SequenceFeature
-    rain: SequenceFeature
-    weatherCode: SequenceFeature
-    cloudCover: SequenceFeature
-    windSpeed: SequenceFeature
-    soilMoisture: SequenceFeature
-    daylightDuration: float
-    sunshineDuration: float
-    
-@dataclass
-class Datespan:
-    begin: datetime
-    end: datetime
 
 class WeatherRequests:
     def __init__(self):
@@ -43,20 +17,32 @@ class WeatherRequests:
         self._features += ",weather_code"
         self._features += ",cloud_cover"
         self._features += ",wind_speed_10m"
-        self._features += ",soil_moisture_0_to_7cm"
         self._features += "&daily="
         self._features += "daylight_duration"
         self._features += ",sunshine_duration"
 
         self._maxHourlyRequests = 5000
         self._maxDailyRequests = 10000
-        self._urlWeatherApi = "https://archive-api.open-meteo.com/v1/archive"
+        self._urlPastWeatherApi = "https://archive-api.open-meteo.com/v1/archive"
+        self._urlCurrentWeatherApi = "https://api.open-meteo.com/v1/forecast"
 
-    def _requestData(self, longitude: float, lattitude: float, queryDate: datetime) -> (int, dict):
+    def _requestData(self, longitude: float, latitude: float, queryDate: datetime) -> (int, dict):
+        """ Retrieve local meterological information
+
+        Args:
+            longitude (float)
+            latitude  (float)
+            queryData (datetime): date for which the data should be extracted
+
+        Returns:
+            (int, dict): identifier to read the features at the right time spot, api resonse as a dict
+        """
         apiDate = f"{queryDate.year}-{queryDate.month:02d}-{queryDate.day:02d}"
         
         timeRange = f"start_date={apiDate}&end_date={apiDate}"
-        apiCmd = f"{self._urlWeatherApi}?latitude={lattitude}&longitude={longitude}&{self._features}&{timeRange}"
+        queryUrl = self._urlCurrentWeatherApi if queryDate.year >= 2024 else self._urlPastWeatherApi
+        
+        apiCmd = f"{queryUrl}?latitude={latitude}&longitude={longitude}&{self._features}&{timeRange}"
         receivedData = requests.get(apiCmd).json()
 
         foundMatch = False
@@ -82,7 +68,17 @@ class WeatherRequests:
     def getStatisticsFor(self,
         longitude: float,
         lattitude: float,
-        date: datetime):
+        date: datetime) -> dict:
+        """ Get metrological data for geo-coordinates and date
+
+        Args:
+            longitude (float)
+            lattitude (float)
+            date (datetime)
+
+        Returns:
+            dict: meterological sample
+        """
 
         timefocusId, receivedData = self._requestData(longitude, lattitude, date)
 
@@ -93,19 +89,26 @@ class WeatherRequests:
             "weather_code": receivedData["hourly"]["weather_code"][timefocusId],
             "cloud_cover": receivedData["hourly"]["cloud_cover"][timefocusId],
             "wind_speed": receivedData["hourly"]["wind_speed_10m"][timefocusId],
-            "soil_moisture": receivedData["hourly"]["soil_moisture_0_to_7cm"][timefocusId],
             "daylight_duration": receivedData["daily"]["daylight_duration"][0],
             "sunshine_duration": receivedData["daily"]["sunshine_duration"][0]
             }
     
-    def storeDataset(self, df_weather):
-        print("Saving latest state of dataset")
-        print(df_weather.head())
-
-        with open(Config.weatherDataframeFilepath, 'wb') as pickleFile:
-            pickle.dump(df_weather, pickleFile, protocol=pickle.HIGHEST_PROTOCOL)
+    def statisticsToday(self,
+                        longitude: float,
+                        latitude: float):
+        """ Returns today's meterological data for a geo-coodinate """
+        stats = self.getStatisticsFor(longitude, latitude, datetime.now())
+        return stats
     
-    def getWeatherForSurvey(self, startId) -> pd.DataFrame:
+    def getWeatherForSurvey(sel) -> pd.DataFrame:
+        """ Takes the survey location information and retrieves meterological data for the individual cases
+
+        Raises:
+            IOError: Stops if necessary data is not available
+
+        Returns:
+            pd.DataFrame: meterological data for each survey case
+        """
     
         if not os.path.isfile(Config.surveyDataframeFilepath):
             raise IOError(f"Could not find dataset under {Config.surveyDataframeFilepath} please provide, or run SurveyHandling pipeline before.")    
@@ -133,12 +136,11 @@ class WeatherRequests:
             "weather_code": [],
             "cloud_cover": [],
             "wind_speed": [],
-            "soil_moisture": [],
             "daylight_duration": [],
             "sunshine_duration": []
             }
         completedDataset = True
-        for idr, values in enumerate(df_surveyFeatures.get(["tweet_longitude", "tweet_latitude", "tweet_datetime"]).values.tolist()[startId:]):
+        for idr, values in enumerate(df_surveyFeatures.get(["tweet_longitude", "tweet_latitude", "tweet_datetime"]).values.tolist()):
             curLongitude, curLatitude, curDate = values
             
             if idr > self._maxHourlyRequests:
@@ -159,17 +161,8 @@ class WeatherRequests:
         return pd.DataFrame(weatherData)
 
 if __name__ == "__main__":
-    testlongitude = -50.531223
-    testlattitude = -18.453224499999997
-    testday = 15
-    testmonth = 9
-
     print(f"This checks retrieving Weather Data on {testlongitude}:{testlattitude} on day {testday} month {testmonth}")
 
     weatherRequests = WeatherRequests()
-    #stats = weatherRequests.getStatisticsFor(-50.531223, -18.453224499999997, 11, 2)
-
-    #print ("Result is")
-    #print(stats)
-    df_weather = weatherRequests.getWeatherForSurvey(0)
-    weatherRequests.storeDataset(df_weather)
+    df_weather = weatherRequests.getWeatherForSurvey()
+    weatherRequests.storeContent(df_weather, Config.weatherDataframeFilepath, f"Saving latest state of dataset\n{df_weather.head()}")

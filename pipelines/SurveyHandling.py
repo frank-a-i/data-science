@@ -6,8 +6,7 @@ import numpy as np
 import pandas as pd
 import pickle
 from datetime import datetime
-from common import Config
-
+from common import Config, storeContent
 
 
 class SurveyHandling:
@@ -21,6 +20,11 @@ class SurveyHandling:
         self._prepareDataset()
 
     def _prepareDataset(self):
+        """ Downloads, and extracts the data
+
+        Raises:
+            IOError: Stops if the necessary data is not present
+        """
         searchAnyContentCmd = os.path.join(Config.rawDataPath, "*")
         target_content = glob.glob(searchAnyContentCmd)
         
@@ -45,7 +49,16 @@ class SurveyHandling:
         print(f"Extracted {len(glob.glob(searchAnyContentCmd)) - 1} files to {Config.rawDataPath}")
         
         
-    def _readCsv(self, pathToFile, placeboValue=np.nan) -> dict:
+    def _readCsv(self, pathToFile: str, placeboValue=np.nan) -> dict:
+        """ Loads the raw dataset file and turns it into a better processible format
+
+        Args:
+            pathToFile (str): where the raw data is located
+            placeboValue (np.nan, optional): value that should be put if data is missing. Defaults to np.nan.
+
+        Returns:
+            dict: the processible dictionary
+        """
 
         assert os.path.isfile(pathToFile), f"Cannot read file '{pathToFile}'"
 
@@ -74,7 +87,18 @@ class SurveyHandling:
         return csvContent
 
 
-    def composeDataframe(self, dropIdentifier=True):
+    def composeDataframe(self, dropIdentifier=True) -> pd.DataFrame:
+        """ Turns the individual raw datasets into a combined dataframe
+
+        Args:
+            dropIdentifier (bool, optional): whether the identifier columns should be kept, after they have been merged with the actual information (e.g. trackId -> track_title). Defaults to True.
+
+        Raises:
+            IOError: Stops if necessary data is not present
+
+        Returns:
+            pd.DataFrame: all raw datasets combined as a dataframe
+        """
         foundFiles = [os.path.basename(curFile) for curFile in glob.glob(os.path.join(Config.rawDataPath, "*"))]
         requiredFiles = [(dset.split("/")[-1]).replace(".zip",".txt") for dset in self._datasetUrls]
         for dsetFile in requiredFiles:
@@ -107,23 +131,25 @@ class SurveyHandling:
 
         return self._df
     
-    def _convertToAppropriateDatetype(self, df):
+    def _convertToAppropriateDatetype(self, df: pd.DataFrame) -> pd.DataFrame:
+        """ Turns the raw-string information to the actual one
+
+        Args:
+            df (pd.DataFrame): the DataFrame with only str as cell dtype
+
+        Returns:
+            pd.DataFrame: the DataFrame with the right dtypes
+        """
         df["tweet_datetime"] = df["tweet_datetime"].apply(lambda curDate: datetime.strptime(curDate, "%Y-%m-%d %H:%M:%S"))
         strToNumFields = ["tweet_longitude", "tweet_latitude", "tweet_trackId", "tweet_artistId",  "tweet_tweetId", "tweet_id", "tweet_weekday"]
         for field in strToNumFields:
             df[field] = pd.to_numeric(df[field])
             
         return df
-    
-    def storeDataset(self):
-        
-        print("Saving latest state of dataset")
-        print(df.head())
-
-        with open(Config.surveyDataframeFilepath, 'wb') as pickleFile:
-            pickle.dump(self._df, pickleFile, protocol=pickle.HIGHEST_PROTOCOL)
 
     def generateInsights(self):
+        """ Create statistics """
+
         print("Composing data, this might take some minutes")
         analyticsPath = os.path.join(Config.rawDataPath, "..", "analytics")
 
@@ -160,4 +186,4 @@ if __name__=="__main__":
     surveyHandling = SurveyHandling()
     df = surveyHandling.composeDataframe(True)
     surveyHandling.generateInsights()
-    surveyHandling.storeDataset()
+    storeContent(df, Config.surveyDataframeFilepath, f"Saving latest state of dataset\n{df.head()}")
