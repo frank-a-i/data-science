@@ -119,23 +119,23 @@ class SurveyHandling:
         """ Create statistics """
 
         print("Composing data, this might take some minutes")
-        analyticsPath = os.path.join(Config.rawDataPath, "..", "analytics")
+        Config.analyticsPath = os.path.join(Config.rawDataPath, "..", "analytics")
 
         print("Check for missing data")
-        df.isnull().sum().to_csv(os.path.join(analyticsPath, "how_much_data_is_missing.csv"))
+        df.isnull().sum().to_csv(os.path.join(Config.analyticsPath, "how_much_data_is_missing.csv"))
 
         print("Check for date of records distribution")
         dateCounts = df.get(["tweet_datetime"]).value_counts()
-        dateCounts.to_csv(os.path.join(analyticsPath, "date_distribution.csv"))
+        dateCounts.to_csv(os.path.join(Config.analyticsPath, "date_distribution.csv"))
 
         print("Check for artist distribution")
         artistCounts = df["artist_name"].value_counts()
-        artistCounts.to_csv(os.path.join(analyticsPath, "artists_distribution.csv"))
+        artistCounts.to_csv(os.path.join(Config.analyticsPath, "artists_distribution.csv"))
         if (df.shape[0] > 1000):
             artistCounts = artistCounts.loc[artistCounts > 3]
         artistfig = artistCounts.plot.bar().get_figure() # refocusing for a better overview
         artistfig.set_size_inches(200,5)
-        artistfig.savefig(os.path.join(analyticsPath, "artist_distribution.png"), bbox_inches='tight', dpi=200)
+        artistfig.savefig(os.path.join(Config.analyticsPath, "artist_distribution.png"), bbox_inches='tight', dpi=200)
 
         print("Check for country distribution")
         ax = df.get(["tweet_latitude", "tweet_longitude"]).astype(float).plot.scatter(y="tweet_latitude", x="tweet_longitude", s=1) # refocusing for a better overview
@@ -146,9 +146,9 @@ class SurveyHandling:
         ax.set_xlabel("Longitude")
         ax.set_ylabel("Latitude")
         ax.set_title("Sample extraction location")
-        countryfig.savefig(os.path.join(analyticsPath, "country_distribution.png"), bbox_inches='tight', dpi=200)
+        countryfig.savefig(os.path.join(Config.analyticsPath, "country_distribution.png"), bbox_inches='tight', dpi=200)
 
-        print(f"Completed, see results under '{analyticsPath}'")   
+        print(f"Completed, see results under '{Config.analyticsPath}'")   
     
 
 if __name__=="__main__":

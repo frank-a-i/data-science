@@ -4,6 +4,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 import pickle
 import pandas as pd
+import matplotlib.pyplot as plt
 from pipelines.common import Config, storeContent
 
 from sklearn.tree import DecisionTreeRegressor as Regressor
@@ -68,6 +69,27 @@ def trainRegressor(df: pd.DataFrame, clfs: dict, clfCase: str):
     print(f"{clfCase} RMSE={error}")
     clfs.update({clfCase: {"clf": cv, "error": error}})
 
+def generateInsights(df: pd.DataFrame):
+    """ Create statistics """
+    
+    # weather statistics
+    fig, axes = plt.subplots(1, len(Config.weatherDescriptors))
+    for idx, ax in enumerate(axes):
+        ax.violinplot(df[Config.weatherDescriptors[idx]], showmedians=True)
+        ax.set_title(Config.weatherDescriptors[idx])
+
+    fig.set_size_inches(20,10)
+    fig.savefig(os.path.join(Config.analyticsPath, "weather_descriptor_distribution.png"), bbox_inches='tight', dpi=200)
+
+    # song features
+    fig, axes = plt.subplots(1, len(Config.songDescriptors))
+    for idx, ax in enumerate(axes):
+        ax.violinplot(df[Config.songDescriptors[idx]], showmedians=True)
+        ax.set_title(Config.songDescriptors[idx])
+
+    fig.set_size_inches(20,10)
+    fig.savefig(os.path.join(Config.analyticsPath, "song_descriptor_distribution.png"), bbox_inches='tight', dpi=200)
+
 def runAnalytics(df: pd.DataFrame):
     """Aquire regressors
 
@@ -75,7 +97,9 @@ def runAnalytics(df: pd.DataFrame):
         df (pd.DataFrame): the database with weather and music features
     """
 
+    
     clfs = dict()
+    """
     for clfCase in Config.songDescriptors:
         clfs.update({clfCase: None})
     
@@ -83,7 +107,8 @@ def runAnalytics(df: pd.DataFrame):
         print(f"Training {clfCase} regressor now")
         trainRegressor(df, clfs, clfCase)
     print("Finished training")
-    
+    """
+    generateInsights(df)
     storeContent(clfs, Config.classifierFilepath)
         
 if __name__ == "__main__":

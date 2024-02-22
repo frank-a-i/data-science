@@ -24,6 +24,7 @@ class Config:
     cleanSongSearchResultsFilepath: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "states", "clean_song_ids.csv")
     classifierFilepath: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "states", "clfs.p")
     rawDataPath: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "dataset")
+    analyticsPath: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "analytics")
     testArea = GeoArea(tl=GeoLocation(-32.04, 71.89), br=GeoLocation(40.70, 33.83))
     songDescriptors = ['danceability', 'energy', 'loudness', 'mode', 'speechiness', 'acousticness', 'instrumentalness', 'liveness',
        'valence', 'tempo']
