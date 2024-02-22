@@ -63,3 +63,7 @@ a:active {
 .column {
   flex: 50%;
 }
+
+#contactDetails {
+  max-width: 40%;
+}
