@@ -28,7 +28,7 @@
   </ul>
 
   <p class="vspace"></p>
-  <h1>Insights about decision making</h1>
+  <h1>Insights about the decision making</h1>
   <p class="vlittlespace"></p>
 
   <center>
@@ -52,5 +52,28 @@
     <div style="overflow-x: scroll; width:1200px; height:auto;">
       <img src="{{ url_for('static', filename='artist_distribution.png') }}" style="height : 500px;">
     </div>
+
+    <p>When the weather information is gathered for the corresponding listener statistics, a dataset is composed<br>
+      with the following distriution</p>
+    <div style="overflow-x: scroll; width:1200px; height:auto;">
+      <img src="{{ url_for('static', filename='weather_descriptor_distribution.png') }}" style="height : 500px;">
+    </div>
+    <br>
+    <p>Having a wider range per feature shows a large variety of song types. Which is good for a learning<br>
+      approach, as not only similar but much more different songs (i.e. more unique compared to each other )<br>
+      are used. This indicates a good information gain and thus the database condition is sufficient for learning.</p>
+    <p>The song features to the relevant songs, come with following distribution</p>
+    <div style="overflow-x: scroll; width:1200px; height:auto;">
+      <img src="{{ url_for('static', filename='song_descriptor_distribution.png') }}" style="height : 500px;">
+    </div>
+    <br>
+    <p>Which looks like a good basis for interpretation in general, as the values are well spread. The closer the<br>
+      samples are located within a feature to each other, the less difficult it is to train a regressor (as there are
+      <br>
+      less cases to differentiate) but also most likely less reliable information can be derived from resulting
+      estimates.
+    </p>
+    <br>
+
   </center>
 </body>
