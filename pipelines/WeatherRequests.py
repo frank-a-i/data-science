@@ -126,7 +126,8 @@ class WeatherRequests:
             (df_survey["track_title"].isin(df_songFeatures["track_title"]))
             ]
         df_surveyFeatures = pd.merge(df_survey_streamlined, df_songFeatures)
-                                              
+
+        print(f"Working on {df_surveyFeatures.shape[0]} samples")                  
         weatherData = {
             "tweet_longitude": [], 
             "tweet_latitude": [], 
@@ -141,6 +142,7 @@ class WeatherRequests:
             "sunshine_duration": []
             }
         completedDataset = True
+        
         for idr, values in enumerate(df_surveyFeatures.get(["tweet_longitude", "tweet_latitude", "tweet_datetime"]).values.tolist()):
             curLongitude, curLatitude, curDate = values
             

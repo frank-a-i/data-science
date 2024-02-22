@@ -65,7 +65,7 @@ def trainRegressor(df: pd.DataFrame, clfs: dict, clfCase: str):
     
     y_pred = cv.predict(X_test)
     error = rmse(y_test, y_pred)
-    print(clfCase, error)
+    print(f"{clfCase} RMSE={error}")
     clfs.update({clfCase: {"clf": cv, "error": error}})
 
 def runAnalytics(df: pd.DataFrame):

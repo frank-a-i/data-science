@@ -22,6 +22,11 @@ def recommendations():
 def insights():
     return render_template('insights.html')
 
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+# request handling
 @app.route('/getWeather', methods=['POST'])
 def getWeather():
     return weatherRequests.statisticsToday(
@@ -38,10 +43,7 @@ def getSongStats():
     for feature in REGRESSORS.keys():
         
         sample = pd.DataFrame(
-            {feature: [request.form.get(feature)] for feature in [
-                "temp", "rel_humidity", "rain", "weather_code", "cloud_cover", 
-                "wind_speed", "soil_moisture", "daylight_duration", "sunshine_duration"]
-             })
+            {feature: [request.form.get(feature)] for feature in Config.weatherDescriptors})
         
         estimate = REGRESSORS[feature]["clf"].predict(sample)[0]
         results.update({feature: round(estimate*100, 1) if feature not in ["tempo"] else round(estimate)})

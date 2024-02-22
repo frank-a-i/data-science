@@ -15,6 +15,7 @@ $(document).ready(function () {
 
         $("#weatherStatsContainer").show();
         $("#getRecommendationStats").show();
+        $("#getRecommendationStatsHelper").show();
     });
 
     $("#getRecommendationStats").click(function (event) {
@@ -30,13 +31,15 @@ $(document).ready(function () {
                 "wind_speed": document.getElementById('windSpeed10mid').value,
                 "daylight_duration": document.getElementById('daylightDurationid').value,
                 "sunshine_duration": document.getElementById('sunshineDurationid').value,
-                "soil_moisture": 0
             },
             success: fillRecommendationBars
         });
         $("#progressContainer").show();
         $("#giveSongExample").show();
+        $("#giveSongHelper").show();
         $("#checkboxContainer").show();
+        $("#checkBoxesHelper").show();
+
     });
 
     $.ajax({
@@ -100,8 +103,11 @@ $(document).ready(function () {
     $("#progressContainer").hide();
     $("#weatherStatsContainer").hide();
     $("#getRecommendationStats").hide();
+    $("#getRecommendationStatsHelper").hide();
     $("#checkboxContainer").hide();
+    $("#checkBoxesHelper").hide();
     $("#giveSongExample").hide();
     $("#songContainer").hide();
+    $("#giveSongExampleHelper").hide();
 
 });

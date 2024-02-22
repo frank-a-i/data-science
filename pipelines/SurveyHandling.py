@@ -50,12 +50,12 @@ class SurveyHandling:
                 
         print(f"Extracted {len(glob.glob(searchAnyContentCmd)) - 1} files to {Config.rawDataPath}")
 
-    def composeDataframe(self, dropIdentifier=True) -> pd.DataFrame:
+    def composeDataframe(self, dropIdentifier=True, smallDataset=True) -> pd.DataFrame:
         """ Turns the individual raw datasets into a combined dataframe
 
         Args:
             dropIdentifier (bool, optional): whether the identifier columns should be kept, after they have been merged with the actual information (e.g. trackId -> track_title). Defaults to True.
-
+            smallDataset (bool, optional):   this streamlines the final dataset to a few samples for test runs, to keep down low the overall processing time
         Raises:
             IOError: Stops if necessary data is not present
 
@@ -89,6 +89,8 @@ class SurveyHandling:
         
         df_reduced = df_europe.drop(np.random.choice(df_europe.index, df_europe.shape[0] - Config.apiRequestLimit, replace=False)).reset_index()
 
+        if smallDataset:
+            df_reduced = df_reduced.sample(150)
         if dropIdentifier:
             self._df = df_reduced.drop(["tweet_trackId", "tweet_artistId", "tweet_userId"], axis=1)
         else:
@@ -129,7 +131,9 @@ class SurveyHandling:
         print("Check for artist distribution")
         artistCounts = df["artist_name"].value_counts()
         artistCounts.to_csv(os.path.join(analyticsPath, "artists_distribution.csv"))
-        artistfig = artistCounts.loc[artistCounts > 3].plot.bar().get_figure() # refocusing for a better overview
+        if (df.shape[0] > 1000):
+            artistCounts = artistCounts.loc[artistCounts > 3]
+        artistfig = artistCounts.plot.bar().get_figure() # refocusing for a better overview
         artistfig.set_size_inches(200,5)
         artistfig.savefig(os.path.join(analyticsPath, "artist_distribution.png"), bbox_inches='tight', dpi=200)
 

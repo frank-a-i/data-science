@@ -25,21 +25,41 @@ p {
   margin-bottom: 2em;
 }
 
-
 #img-scaled {
   width: 500px;
   height: auto;
-  /*to preserve the aspect ratio of the image*/
-}
-
-.px-1 {
-  border-color: black;
-  border-style: solid;
-  border-radius: 15px;
 }
 
 .px-4 {
   background-image: linear-gradient(to bottom, dimgrey, darkblue);
   color: white;
   border-radius: 15px;
+}
+
+a:link {
+  color: lightgray;
+  background-color: transparent;
+  text-decoration: none;
+}
+
+a:visited {
+  color: lightblue;
+  background-color: transparent;
+  text-decoration: none;
+}
+
+a:hover {
+  color: white;
+  background-color: transparent;
+  text-decoration: underline;
+}
+
+a:active {
+  color: lightskyblue;
+  background-color: transparent;
+  text-decoration: underline;
+}
+
+.column {
+  flex: 50%;
 }

@@ -160,17 +160,18 @@ class SongAttributes:
             musicFeatures.update({feature: []})
         
         batchProcessingIds = []
+        print(f"Looking for descriptors for {df_content.shape[0]} songs")
         for curContent in df_content.iterrows():
             if len(batchProcessingIds) < self._batchSize:
                 batchProcessingIds.append(curContent[1]["id"])
                 continue
-            batchProcessingIds = []
             queryAttributes(musicFeatures, batchProcessingIds)
+            batchProcessingIds = []
         
         if len(batchProcessingIds) > 0:
             queryAttributes(musicFeatures, batchProcessingIds)
             
-
+        print(f"Found descriptors for {len(musicFeatures['id'])} songs")
         return pd.DataFrame(musicFeatures)
    
     def getSongAttributesForSurvey(self):
@@ -187,11 +188,12 @@ class SongAttributes:
             df = pickle.load(pickleFile)
         
         df_music = df.get(["track_title", "artist_name"])
+        print(f"Number of planned querries {df_music.shape[0]}")
         
-        headline="artist_name;track_title;id;popularity"
+        headline="artist_name\ttrack_title\tid\tpopularity"
         if os.path.isfile(Config.songSearchResultsFilepath):
             try:
-                df_storedIds = pd.read_csv(Config.songSearchResultsFilepath, delimiter=";", on_bad_lines="warn", encoding = "latin")
+                df_storedIds = pd.read_csv(Config.songSearchResultsFilepath, delimiter="\t", on_bad_lines="warn", encoding = "latin")
             except Exception as e:
                 raise RuntimeError(e)
         else:
@@ -199,33 +201,36 @@ class SongAttributes:
                 newSongIdFile.write(f"{headline}\n")
             df_storedIds = pd.DataFrame({"artist_name": [], "track_title": [], "id": [], "popularity":[]})
                 
-        with open(Config.songSearchResultsFilepath, 'a') as songIdFile:
-            for idt, track in enumerate(df_music.iterrows()):
-                if idt % 1 == 0:
-                    print(f"Processed {idt}/{df_music.shape[0]}")
-    
-                artist = track[1]["artist_name"]
-                title = track[1]["track_title"]
-                df_relevantContent = df_storedIds.loc[(df_storedIds["artist_name"] == artist) & (df_storedIds["track_title"] == title)]
-                alreadyFetched = df_relevantContent.shape[0] > 0
+        for idt, track in enumerate(df_music.iterrows()):
+            if idt % 1 == 0:
+                print(f"Processed {idt}/{df_music.shape[0]}")
 
-                if alreadyFetched:
-                    continue
-                idAndPopularity = self._fetchSongId(title, artist)
-                
-                if idAndPopularity is None:
-                    curId = np.nan
-                    curPopularity = np.nan
-                else:
-                    curId = idAndPopularity[0]
-                    curPopularity = idAndPopularity[1]
-                df_storedIds = pd.concat([
-                    df_storedIds,
-                    pd.DataFrame({f"{headline.split(';')[0]}": [artist], 
-                                  f"{headline.split(';')[1]}": [title], 
-                                  f"{headline.split(';')[2]}": [curId], 
-                                  f"{headline.split(';')[3]}": [curPopularity]})])
-                newEntry=f"{artist};{title};{curId};{curPopularity}\n"
+            artist = track[1]["artist_name"]
+            title = track[1]["track_title"]
+            df_relevantContent = df_storedIds.loc[(df_storedIds["artist_name"] == artist) & (df_storedIds["track_title"] == title)]
+            alreadyFetched = df_relevantContent.shape[0] > 0
+
+            if alreadyFetched:
+                continue
+            idAndPopularity = self._fetchSongId(title, artist)
+            
+            if idAndPopularity is None:
+                curId = np.nan
+                curPopularity = np.nan
+            else:
+                curId = idAndPopularity[0]
+                curPopularity = idAndPopularity[1]
+            
+            headlineTokens = headline.split('\t')
+            df_storedIds = pd.concat([
+                df_storedIds,
+                pd.DataFrame({f"{headlineTokens[0]}": [artist], 
+                                f"{headlineTokens[1]}": [title], 
+                                f"{headlineTokens[2]}": [curId], 
+                                f"{headlineTokens[3]}": [curPopularity]})])
+            newEntry=f"{artist}\t{title}\t{curId}\t{curPopularity}\n"
+
+            with open(Config.songSearchResultsFilepath, 'a') as songIdFile:
                 print(f"Adding {newEntry}")
                 songIdFile.write(newEntry)
                 
@@ -235,9 +240,9 @@ class SongAttributes:
         df_uniqueIds = df_dropNone.drop_duplicates()
         print("Number of unique identified songs: ", df_uniqueIds.shape[0])
         df_orderedUniqueIds = df_uniqueIds.reset_index(drop=True)
-        print("Storing results to: ", Config.cleanSongSearchResultsFilepath)
-        df_orderedUniqueIds.to_csv(Config.cleanSongSearchResultsFilepath)
+        
         df_musicFeatures = self._fetchAttributes(df_orderedUniqueIds.get(["id", "popularity"]))
+        print(df_musicFeatures.shape)
         df_allSongInfo = pd.merge(df_orderedUniqueIds, df_musicFeatures).drop(["popularity"], axis=1)  # covered in df_musicFeatures
         storeContent(df_allSongInfo, Config.songAttributesDataframeFilepath, userMsg=df_allSongInfo.head())
         
