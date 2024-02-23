@@ -1,6 +1,23 @@
 # Weather influence on music
 
-The prototype in this repository was created during a data science training. Idea, concept, implementation and evaluation have been done by me. 
+The prototype in this repository was created in my freetime in less than a month as part of a data science training. Idea, concept, implementation and evaluation have been done by me. 
+
+## Table of contents
+
+- [Weather influence on music](#weather-influence-on-music)
+    - [Table of contents](#table-of-contents)
+    - [Purpose](#purpose)
+    - [Strategy and learning target](#strategy-and-learning-target)
+    - [Data Acquistion](#data-acquistion)
+        - [Dataset composition](#dataset-composition)
+    - [Data inspection & training](#data-inspection--training)
+        - [Artists](#artists)
+        - [Song descriptors](#song-descriptors)
+        - [Weather descriptors](#weather-descriptors)
+        - [Training strategy](#training-strategy)
+    - [Results & Outlook](#results--outlook)
+        - [Application in a real scenario](#application-in-a-real-scenario)
+        - [Further optimization](#further-optimization)
 
 ## Purpose
 
@@ -18,11 +35,11 @@ These two data sources, are yet not enough. In order to give more general estima
 
 ## Data Acquistion
 
-A million musical tweets is a relatively big data basis. When each of these samples would be analyzed it would overstrain the basic usage plan of the APIs. Upgrading the API-plan certainly would solve that, however for a proof of concept this might not be necessary. To put it in perspective, here's an overview from where in the world data has been collected
+A million musical tweets is a relatively big data basis. When each of these samples would be analyzed, it would overstrain the basic usage plan of the APIs. Upgrading the API-plan obiously would solve that, however for a proof of concept this might not be necessary. To put it in perspective, here's an overview from where in the world data has been collected
 
 <img src="./analytics/general_country_distribution.png" alt="Overview to which area the samples of the whole MMTD relate to" style="width:70%;"/>
 
-Hence in order to keep a certain diversity in the result and not being to focused on a specific group of people, for this research a subset was created containing the data from the european area. This area was choosen as it comes with two advantages: 
+Hence in order to keep a certain diversity in the result and not being too focused on a specific group of people, for this research a subset was created containing the data from the european area. This area was choosen as it comes with two advantages: 
 
 - within this area a large amount of completely different cultures can be found 
 - the meterological situations are very different from country to country
@@ -46,7 +63,7 @@ With this the weather information can be collected from a certain date back in t
 - Daylight duration - Number of seconds of daylight.
 - Sunshine duration - Number of seconds of sunshine.
 
-There are even more possible features to fetch, however they don't always match the ones from today's weather data (e.g. `Soil Moisture (0-7 cm)` for data from the past vs `Soil Moisture (0-1 cm)` for today's information). Leaving those out to avoids a possible feature impurity, which prevents learning a different character that confuses the prediction. Also from the point of view for a a proof of concept study, it is an appropriate amount of feature to describe how the weather conditions were.
+There are even more possible features to fetch, however they don't always match the ones from the API of today's weather data (e.g. `Soil Moisture (0-7 cm)` for data from the past vs `Soil Moisture (0-1 cm)` for today's information). These are left out to avoid a possible feature impurity, which prevents learning a different character that confuses the prediction. Also from the point of view for a a proof of concept study, it is an appropriate amount of features to describe how the weather conditions were.
 
 From Spotify in turn we can extract features like
 
@@ -75,7 +92,7 @@ Here's an overview about the artist distribution
 
 ![Distribution of artists](./analytics/artist_distribution.png)
 
-As by their nature, it expectedly shows that the ones from the pop-genre stand out the most frequently in their amount of references. But it also points out a rather broad spectrum, when looking at artists like *Korn*, *Aha*, or *Bob Marley*. Which stands for a good learning basis to achieve a general understanding than being focused on a few sub-groups.
+As by their nature, it expectedly shows that the ones from the pop-genre stand out as the most frequent ones in their amount of references. But it also points out a rather broad spectrum, when looking at artists like *Korn*, *Aha*, or *Bob Marley*. Which stands for a good learning basis to achieve a general understanding than being focused on a few sub-groups.
 
 ### Song descriptors
 
@@ -95,24 +112,24 @@ The distribution here looks like a good basis for interpretation in general, as 
 
 Learning to estimate floating values like the target characteristics, is a typical task for machine learning regression.
 
-From many algorithm options a *Decision Tree Regressor* is chosen. The performance of such estimators often times hold back when compared to neural networks. Though what speaks for it is amongst others
+From many algorithm options a *Decision Tree Regressor* is chosen. The performance of such estimators often times hold back when compared to neural networks. Though what speaks for it amongst other benefits is
 
 - a mangeable amount of optimization parameters.
 - out of the box usage (when a library like scikit-learn is used).
 - known for well handling of categorical data.
 - quickly trained.
 
-all in all, a good match for building a rapid-prototype and getting a feeling how well the matter is learnable. This way the time to first results is greatly decreased.
+All in all, a good match for building a rapid-prototype and getting a feeling how well the matter is learnable. This way the time until the first results are received, is greatly decreased.
 
 Defining the kind of estimator is one step, the next is the learning target. As already mentioned, in the end, Spotify's music descriptors should be learned. For each of those descriptors an individual estimator, with a separate training needs to be provided, still with the same data basis. This is sketched like
 
-![Ensemble of decision trees per feature](./analytics/ensemble.png)
+<img src="./analytics/ensemble.png" alt="Ensemble of decision trees per feature" style="width:80%;"/>
 
 The functional performance of each estimator is optimized, by the possible algorithm parameters via a grid search. 
 
 ## Results & Outlook
 
-With the setting described above, after cleaning the dataset each estimator gets fed with 3472 samples for training, which are split into a training set (77% of the data) and the rest for testing. To evaluate the functional performance, a root mean square error a common metric for regression prediction.
+With the setting described above, after cleaning the dataset each estimator gets fed with 3472 samples for training, which are split into a training set (77% of the data) and the rest for testing. To evaluate the functional performance, a root mean square error is used, a common metric for regression prediction.
 
 Below are the results of the optimized regressors
 
@@ -129,15 +146,17 @@ Below are the results of the optimized regressors
 | valence           | 0.2                       |
 | tempo             | 26.2                      |
 
-An overall satisfying result for such a prototype. The underperformance for descriptor *tempo* probably is caused, since all other options occur in all BPM-ranges and thus no destinctive characteristics could be extracted. 
+An overall satisfying result for such a prototype. 
+
+The underperformance for descriptor *tempo* probably is caused, since all sorts of music occur in almost all BPM-ranges and thus no destinctive characteristics could be extracted. 
 
 ### Application in a real scenario
 
-As promising these results may look, after all these won't exactly show how well the approach works out if it is really applied. This is not covered by this metric. There are different reasons to this, where one of them probably is that explaining the prefered music choice of an individual is not a trivial task. Though it could help to increase the focus on the relevant ones.
+As promising these results may look, after all these won't exactly show how well the approach works out if it is really applied. This is not covered by this metric. There are different reasons to this, where one of them probably is, that explaining the prefered music choice of an individual is not a trivial task. Though it could help to increase the focus on the relevant ones.
 
-That being said, the investigations above can only be taken as an approximation, an educated guess whether this approach is applicable in general. To measure the actual performance an experiment needs to be performed, by separating a set of users in two groups. The one group perceives the recommendations as they were before, while the other group perceives the recommendation almost the same, except of the recommendations are inspired by the results of the estimators. This is then carried out a few monts or even a year long, just to make sure a large variance of weather conditions is recorded. Eventually the user satisfaction is compared and the better option should be kept accordingly. 
+That being said, the investigations above can only be taken as an approximation, an educated guess whether this approach is applicable in general. To measure the actual performance an experiment needs to be performed, by separating a set of users in two groups. The one group perceives the recommendations as they were before, while the other group perceives the recommendation almost the same, except of the recommendations are inspired by the results of the estimators. This is then carried out a few months or even a year long, just to make sure a large variance of weather conditions is recorded. Eventually the user satisfaction is compared and the better option should be kept accordingly. 
 
-How this satisfaction ultimately is measured, depends on where the algorithm is applied. For instance, a streaming radio station could compare the numbers of listeners. While on-demand services, like Spotify, could measure if and what UI controls are used (if the track was skipped or the volume was increased). This approach is widely known as a so called A/B-test.
+How this satisfaction ultimately is measured, depends on where the algorithm is applied. For instance, a streaming radio station could compare the numbers of listeners. While on-demand services, like Spotify, could measure if and what UI controls are used (e.g. if the track was skipped or the volume was increased). This approach is widely known as a so called A/B-test.
 
 ### Further optimization
 
@@ -145,12 +164,12 @@ This algorithm can be further improved in different ways.
 
 **On algorithm side**:
 
-- A more advanced yet still very swift version of a decision tree, is a special ensemble: the *Random Forest*. It might already bring a performance boost without a preparation time, besides the actual training.
+- A more advanced yet still very swift version of a decision tree, is a special ensemble: the *Random Forest*. It might already bring a performance boost without a further preparation time, besides the actual training.
 - Though if it is seriously considered to apply this approach, more modern estimators, probably based on neural networks, should be evaluated.
-- A trailing estimator might take the results of the other regressors and estimate how relevant each music descriptor was to look for the song (which would replace the manual selection of features in this repo's web-UI)
+- A trailing estimator might take the results of the other regressors and estimate how relevant each music descriptor was to look for the song given by the sample (which would replace the manual selection of features in this repo's web-UI)
 
 **On data side**:
 
 - First and foremost the full survey data should be used, to better differentiate the cases.
-- Further meterological features could be used for training
-- Next to weather features, the geo coordinates probably would help a lot to better differentiate at least culture differences, as they usualy are often close to each other.
+- Further meterological features could be used for training.
+- Next to weather features, the geo coordinates probably would help a lot to better distinguish at least culture differences, as they usualy are often close to each other.
