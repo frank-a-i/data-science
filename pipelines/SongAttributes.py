@@ -197,7 +197,7 @@ class SongAttributes:
             except Exception as e:
                 raise RuntimeError(e)
         else:
-            with open(Config.songSearchResultsFilepath, 'x') as newSongIdFile:
+            with open(Config.songSearchResultsFilepath, 'x', encoding="latin") as newSongIdFile:
                 newSongIdFile.write(f"{headline}\n")
             df_storedIds = pd.DataFrame({"artist_name": [], "track_title": [], "id": [], "popularity":[]})
                 
@@ -230,9 +230,12 @@ class SongAttributes:
                                 f"{headlineTokens[3]}": [curPopularity]})])
             newEntry=f"{artist}\t{title}\t{curId}\t{curPopularity}\n"
 
-            with open(Config.songSearchResultsFilepath, 'a') as songIdFile:
-                print(f"Adding {newEntry}")
-                songIdFile.write(newEntry)
+            try:
+                with open(Config.songSearchResultsFilepath, 'a') as songIdFile:
+                    print(f"Adding {newEntry}")
+                    songIdFile.write(newEntry)
+            except Exception as e:
+                print(f"Could not write {artist} : {title} to file:\n{e}")
                 
         print("Number of total findings: ", df_storedIds.shape[0])
         df_dropNone = df_storedIds.loc[df_storedIds.get(["id", "popularity"]).notna().all(axis=1)]

@@ -50,7 +50,7 @@ class SurveyHandling:
                 
         print(f"Extracted {len(glob.glob(searchAnyContentCmd)) - 1} files to {Config.rawDataPath}")
 
-    def composeDataframe(self, dropIdentifier=True, smallDataset=True) -> pd.DataFrame:
+    def composeDataframe(self, dropIdentifier=True, smallDataset=False) -> pd.DataFrame:
         """ Turns the individual raw datasets into a combined dataframe
 
         Args:

@@ -72,6 +72,7 @@ def trainRegressor(df: pd.DataFrame, clfs: dict, clfCase: str):
 def generateInsights(df: pd.DataFrame):
     """ Create statistics """
     
+    print("Generating insights")
     # weather statistics
     fig, axes = plt.subplots(1, len(Config.weatherDescriptors))
     for idx, ax in enumerate(axes):
@@ -99,15 +100,15 @@ def runAnalytics(df: pd.DataFrame):
 
     
     clfs = dict()
-    """
+    
     for clfCase in Config.songDescriptors:
         clfs.update({clfCase: None})
     
     for clfCase in Config.songDescriptors:
         print(f"Training {clfCase} regressor now")
         trainRegressor(df, clfs, clfCase)
-    print("Finished training")
-    """
+    print("Finished training")    
+    
     generateInsights(df)
     storeContent(clfs, Config.classifierFilepath)
         
