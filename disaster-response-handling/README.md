@@ -6,7 +6,7 @@ This is a demo app that analyses arbitrary text messages whether they are releva
 
 Running from scratch one needs to 
 
-0. Create virtual environment (use `requirements.txt` for package list)
+0. Create virtual environment (use the top level `requirements.txt` for package list)
 
 1. Compose the dataset by `python pipelines/etl.py`
 2. Compose the classifier `python pipelines/ml.py`
@@ -16,7 +16,7 @@ As a shortcut, 1. and 2. can be skipped when `ressources/classifier.pkl` exists.
 
 ## Structure
 
-This program needs an offline preparation before actual usage. This is covered in the `pipelines` directory, where 
+This program needs an offline preparation before first usage. This is covered in the `pipelines` directory, where 
 
 - `etl.py` extracts data and composes a dataset
 - `ml.py` utilizes that dataset for preparing and training classifiers
@@ -25,7 +25,3 @@ Further files are for maintaining the UI
 
 - `web_interface.py` and `UI.py` for running the `Flask` environment
 - `analyzer.py` as used as an helper interface for the classifier
-
-## Copyright and license
-
-Code and documentation copyright 2024 the Frank Alexander Ihle. Code released under the MIT License. Docs released under Creative Commons.

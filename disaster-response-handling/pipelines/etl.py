@@ -98,3 +98,4 @@ if __name__ == "__main__":
     cleaned_categories = makeIndividualColumns(categories)
     dataset = cleanDataFrame(cleaned_categories)
     exportData(dataset)
+    
