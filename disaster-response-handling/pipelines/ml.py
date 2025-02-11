@@ -1,12 +1,10 @@
-
+from multiprocessing import Process, Manager
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.metrics import confusion_matrix, recall_score, accuracy_score, f1_score
 
-from nltk.tokenize import word_tokenize
-from nltk.stem import WordNetLemmatizer
 import pycld2 as cld2
 import nltk
 import os
@@ -18,8 +16,12 @@ import argparse
 import plotly
 import plotly.express as px
 
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
 
 nltk.download(['punkt', 'wordnet'])
+
+
 def loadDataset(
     sqliteFile: str, 
     table: str) -> pd.DataFrame:
@@ -49,16 +51,13 @@ def composeClassifiers(categories: list, train_size: float, X: list, Y: list) ->
     Returns:
         dict: the prepared classifiers
     """
-    
-    estimators = dict()
-    
-    # make a pipeline per category
-    print("Initiating training. This might take a while.")
-    for category in categories:
+
+    def trainingPipeline(category, X, Y, train_size, return_estimators):
+        """ Common processes for training tasks """    
         X_train, X_test, y_train, y_test = train_test_split(X, Y[category], train_size=train_size)
 
         pipeline = Pipeline([
-                ('vect', CountVectorizer(tokenizer=tokenize)),
+                ('vect', CountVectorizer(tokenizer=tokenize, token_pattern=None)),
                 ('tfidf', TfidfTransformer()),
                 ('clf', RandomForestClassifier())
             ])
@@ -73,7 +72,25 @@ def composeClassifiers(categories: list, train_size: float, X: list, Y: list) ->
         # train
         pipeline.fit(X_train, y_train)
         # push back
-        estimators.update({category: {"clf": pipeline, "test_data": {"X": X_test, "y": y_test}, "train_data": X_train}})
+        return_estimators[category] = {"clf": pipeline, "test_data": {"X": X_test, "y": y_test}, "train_data": X_train}       
+   
+    # make a pipeline per category
+    print("Initiating training. This might take a while.")
+    procs = []
+    
+    with Manager() as manager:
+        return_estimators = manager.dict()
+        for idx, category in enumerate(categories):
+            print(f" - training classifier {idx + 1}/{len(categories)}: {category}")
+            # speed up by parallelization
+            procs.append(Process(target=trainingPipeline, args=(category, X, Y, train_size, return_estimators, )))
+            procs[-1].start()
+
+        for proc in procs:
+            proc.join()
+        
+        estimators = dict(return_estimators)
+    print("reeturning")
     return estimators
 
 
