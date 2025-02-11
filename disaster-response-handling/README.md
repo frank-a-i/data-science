@@ -1,6 +1,12 @@
 # Disaster response analysis helper
 
-This is a demo app that analyses arbitrary text messages whether they are relevant for disaster protection and puts it with the help of AI into relevant categories (like 'missing people', 'child alone' or 'food') for a quicker processing of a human operator.
+This app analyses arbitrary text messages whether they are relevant for disaster emergency handling and puts it with the help of AI into relevant categories (like `missing people`, `child alone` or `food`) for a potential quicker processing and responding of a human operator.
+
+It is based on a dataset with arbitrary and emergency messages. These first have to be preprocessed and turned into a machine processible format, after that classifiers are trained to separated arbitrary from relevant messages. 
+
+In order to keep it interactive a web app is provided, demonstrating the capabilities and feeding own arbitrary messages for analysis
+
+**Note:** It operates on an ensemble of Random Forest Classifiers in order to rapidly create a prototype. The accuracy could greatly be increased by tweaking the classification approach, though this was not the prime focus it was mainly about establishing a feasability PoC.
 
 ## How to run
 
