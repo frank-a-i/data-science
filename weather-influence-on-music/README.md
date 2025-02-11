@@ -49,16 +49,18 @@ In the user interface a user can
 **Note**: with the provided data in this repo one can already start the user interface with all features. No preparations like training are necessary for this. If you would like to run the steps on your own, you need to provide Spotify API
 credentials, as the ones in the code have been deactivated. Depending on your machine all steps require ~ 1 day processing time.
 
+**Update (8. Feb, 2025)**: Spotify made [essential changes](https://community.spotify.com/t5/Spotify-for-Developers/Changes-to-Web-API/m-p/6541541) to the API, that also affects fetching the song features. Since it was announced deprecated and the API doesn't react on these requests anymore, there is currently no way to extract this content on your own for now.
+
 Below is an overview of the individual parts and how to interact with them
 
 ### Initial setup
 
-After the repo has been cloned locally, the required python packages need to be installed that are summarized in the `packages.txt`.
+After the repo has been cloned locally, the required python packages need to be installed that are summarized in the top level  `requirements.txt`.
 
 **Note**: it is recommended to work with a dedicated virtual environment on that matter.
 
 ```
-python3 -m pip install -r packages.txt
+python3 -m pip install -r requirements.txt
 ```
 
 ### User Interface
@@ -72,6 +74,7 @@ python3 web_interface.py
 and follow the instructions in the terminal.
 
 Requires:
+
 - song database (*full_data.p*)
 - regressors  (*clfs.p*)
 
@@ -85,6 +88,7 @@ python3 pipelines\SurveyHandling.py
 No input data needed.
 
 Exports:
+
 - listening statistics (*survey_data.p*)
 - statistics and visualizations (*analytics/*)
 
@@ -96,9 +100,11 @@ Here the songs are looked up in Spotify's database for their individual features
 python3 pipelines\SongAttributes.py
 ```
 Requires:
+
 - listening statistics (*survey_data.p*)
 
 Exports:
+
 - intermediate states to continue on an intended or unintended early exit (*song_ids.csv*)
 - song features (*song_attribute_data.p*)
 
@@ -110,10 +116,12 @@ Gathers the meterological data to the songs under investigation. Since it might 
 python3 pipelines\WeatherRequests.py
 ```
 Requires:
+
 - song features (*song_attribute_data.p*)
 - listening statistics (*survey_data.p*)
 
 Exports:
+
 - weather information (*weather_data.p*)
 
 ### RelationAnalytics
@@ -124,11 +132,13 @@ As a final step, this is where all the data gets combined. Here for each music a
 python3 pipelines\RelationAnalytics.py
 ```
 Requires
+
 - weather information (*weather_data.p*)
 - listening statistics (*survey_data.p*)
 - song features (*song_attribute_data.p*)
 
 Exports:
+
 - a set of regressors (*clfs.p*)
 
 ## File Description
